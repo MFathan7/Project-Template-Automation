@@ -3,6 +3,10 @@ from playwright.async_api import async_playwright, Page, Browser, Playwright
 
 logger = logging.getLogger(__name__)
 
+# ==========================================
+# BROWSER ACTIVITIES
+# ==========================================
+
 class UseApplicationBrowserAsync:
     def __init__(self, url: str, headless: bool = False, close_on_exit: bool = True, timeout_ms: int = 30000):
         self.url = url

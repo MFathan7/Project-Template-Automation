@@ -5,6 +5,10 @@ import xlwings as xw
 
 logger = logging.getLogger(__name__)
 
+# ==========================================
+# EXCEL ACTIVITIES
+# ==========================================
+
 class ExcelApplicationScope:
     def __init__(self, file_path: str, visible: bool = False, create_new_file: bool = True, save_changes: bool = True):
         self.file_path = os.path.abspath(file_path)
