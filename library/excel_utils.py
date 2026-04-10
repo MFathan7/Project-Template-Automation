@@ -85,4 +85,4 @@ class ExcelApplicationScope:
         else:
             sheet = self.wb.sheets[sheet_name]
 
-        sheet.range(start_cell).options(index=False, header=add_headers).value = data
+        sheet.range(start_cell).options(index=False, header=add_headers).value = data.fillna("")
