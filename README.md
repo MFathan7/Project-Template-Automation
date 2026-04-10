@@ -21,9 +21,3 @@ Template ini adalah adaptasi dari **Robotic Enterprise Framework (REFramework)**
 3. **Tulis Logic:** Buka `framework/Process.py` dan tulis alur bisnismu di sana. Gunakan *custom activities* dari folder `library/` agar rapi.
 
 4. **Jalankan:** Run file `main.py`.
-
-## 💡 Fitur Unggulan
-
-* **Custom Logger with Emoji:** Log terminal yang sangat rapi dan mudah dibaca (ℹ️, ❌, ⚠️).
-* **UiPath-Like Activities:** Penggunaan *library* dirancang mirip kotak *Activity* UiPath (mendukung *Type Into*, *Click*, *Read Range*, dll).
-* **Auto-Recovery:** Jika terjadi error sistem, robot akan mencoba *retry* dan *re-init* sesuai pengaturan di Config.
