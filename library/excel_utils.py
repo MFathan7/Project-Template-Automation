@@ -49,7 +49,6 @@ class ExcelApplicationScope:
     # ACTIVITIES: Read Range & Write Range
     # ==========================================
     def read_range(self, sheet_name: str, range_address: str = "A1", has_headers: bool = True) -> pd.DataFrame:
-        #logger.info(f"Membaca sheet '{sheet_name}' dari range '{range_address}'")
         
         if sheet_name in [sheet.name for sheet in self.wb.sheets]:
             sheet = self.wb.sheets[sheet_name]
@@ -57,17 +56,17 @@ class ExcelApplicationScope:
             raise ValueError(f"Sheet '{sheet_name}' tidak ditemukan!")
 
         if range_address == "":
-            # Jika dikosongkan (""), baca seluruh Used Range
+            # Baca seluruh Used Range (mengabaikan putusnya tabel akibat baris kosong)
             df = sheet.used_range.options(pd.DataFrame, index=False, header=has_headers).value
         elif ":" in range_address:
-            # Jika menggunakan titik dua (misal "A1:B4"), baca spesifik range tersebut
+            # Baca spesifik range
             df = sheet.range(range_address).options(pd.DataFrame, index=False, header=has_headers).value
         else:
-            # Jika hanya cell awal (misal "A1"), expand ke seluruh tabel (CurrentRegion)
+            # Baca dengan expand (berhenti jika ada baris/kolom kosong total)
             df = sheet.range(range_address).options(pd.DataFrame, index=False, header=has_headers, expand='table').value
         
         # Jika file kosong, return dataframe kosong
-        if df is None:
+        if df is None or df.empty:
             return pd.DataFrame()
             
         return df
