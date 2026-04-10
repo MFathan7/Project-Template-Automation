@@ -34,6 +34,17 @@ def main():
     ) as excel_scope:
         
         # --------------------------------------
+        # ✍️ ACTIVITY: Write Range
+        # --------------------------------------
+        logger.info("Menulis data ke sheet 'HR_Data'...")
+        excel_scope.write_range(
+            sheet_name="HR_Data",
+            data=data_karyawan,
+            start_cell="A1",
+            add_headers=True
+        )
+        
+        # --------------------------------------
         # 📥 ACTIVITY: Read Range (Full / Auto Expand)
         # --------------------------------------
         logger.info("Membaca kembali data dari sheet 'HR_Data' mulai dari A1...")
@@ -56,6 +67,7 @@ def main():
             range_address="A1:B2", # Hanya baca sampai baris 2, kolom B
             has_headers=True
         )
+        logger.info("\nData (Spesifik A1:B2):")
         print(df_spesifik.to_string(index=False))
 
 if __name__ == "__main__":
