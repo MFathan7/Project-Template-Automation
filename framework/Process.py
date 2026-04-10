@@ -1,6 +1,9 @@
 import logging
 from framework.models import SystemException, BusinessRuleException
 
+logger = logging.getLogger(__name__)
+
+
 def execute(context):
     logger.info("Processing transaction...")
     # NOTE: Contoh pemanggilan global variable
