@@ -26,7 +26,7 @@ def execute(context):
                 for sheet in in_config_sheets:
                     dt_config = excel_scope.read_range(
                         sheet_name=sheet,
-                        range_address="A1",
+                        range_address="",
                         has_headers=True
                     )
                     
