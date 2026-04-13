@@ -70,5 +70,21 @@ def main():
         logger.info("\nData (Spesifik A1:B2):")
         print(df_spesifik.to_string(index=False))
 
+        #ACTIVITY: Get sheet list
+        list_sheet = excel_scope.get_sheets()
+        print(list_sheet)
+
+        # Tulis value per cell
+        excel_scope.write_cell("Report", "A1", "DONE")
+
+        # Baca value per cell
+        status = excel_scope.read_cell("Report", "A1")
+
+        # Menjalankan macro bernama "FormatLaporan" tanpa parameter
+        excel_scope.invoke_vba("FormatLaporan")
+
+        # Menjalankan macro bernama "KalkulasiBonus" dengan parameter (Bulan, Tahun)
+        excel_scope.invoke_vba("KalkulasiBonus", "November", 2024)
+
 if __name__ == "__main__":
     main()

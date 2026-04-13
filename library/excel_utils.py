@@ -23,6 +23,7 @@ class ExcelApplicationScope:
         
         # Buka instance aplikasi Excel
         self.app = xw.App(visible=self.visible, add_book=False)
+        self.app.display_alerts = False
         
         # Cek apakah file ada
         if not os.path.exists(self.file_path):
@@ -40,7 +41,7 @@ class ExcelApplicationScope:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.wb:
-            if self.save_changes:
+            if self.save_changes and exc_type is None:
                 self.wb.save()
                 #logger.info("Perubahan pada Excel berhasil disimpan.")
             self.wb.close()
@@ -86,3 +87,38 @@ class ExcelApplicationScope:
             sheet = self.wb.sheets[sheet_name]
 
         sheet.range(start_cell).options(index=False, header=add_headers).value = data.fillna("")
+
+
+    def read_cell(self, sheet_name: str, cell_address: str) -> any:
+        #logger.info(f"READ CELL: Membaca cell '{cell_address}' dari sheet '{sheet_name}'")
+        if sheet_name not in [sheet.name for sheet in self.wb.sheets]:
+            raise ValueError(f"Sheet '{sheet_name}' tidak ditemukan!")
+            
+        value = self.wb.sheets[sheet_name].range(cell_address).value
+        logger.info(f"   ↳ Hasil: {value}")
+        return value
+
+    def write_cell(self, sheet_name: str, cell_address: str, value: any):
+        
+        #logger.info(f"WRITE CELL: Menulis '{value}' ke cell '{cell_address}' di sheet '{sheet_name}'")
+        if sheet_name not in [sheet.name for sheet in self.wb.sheets]:
+            self.wb.sheets.add(sheet_name)
+            
+        self.wb.sheets[sheet_name].range(cell_address).value = value
+
+    def get_sheets(self) -> list:
+       
+        sheets = [sheet.name for sheet in self.wb.sheets]
+        #logger.info(f"GET SHEETS: Ditemukan {len(sheets)} sheet -> {sheets}")
+        return sheets
+
+    def invoke_vba(self, macro_name: str, *args):
+        #logger.info(f"⚙️ INVOKE VBA: Menjalankan macro '{macro_name}'")
+        try:
+            macro = self.wb.macro(macro_name)
+            result = macro(*args)
+            #logger.info("   ↳ Macro selesai dieksekusi ✅")
+            return result
+        except Exception as e:
+            logger.error(f"   ↳ ❌ Gagal menjalankan macro '{macro_name}': {e}")
+            raise
