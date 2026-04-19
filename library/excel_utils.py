@@ -122,3 +122,36 @@ class ExcelApplicationScope:
         except Exception as e:
             logger.error(f"   ↳ ❌ Gagal menjalankan macro '{macro_name}': {e}")
             raise
+
+    def invoke_vba_from_file(self, vba_file_path: str, entry_method: str, *args):
+        """
+        Membaca file eksternal (.txt atau .vbs), mengeksekusi ke file Excel.
+        """
+        
+        if not os.path.exists(vba_file_path):
+            raise FileNotFoundError(f"File script VBA tidak ditemukan: {vba_file_path}")
+            
+        with open(vba_file_path, 'r') as f:
+            vba_code = f.read()
+            
+        try:
+            vb_module = self.wb.api.VBProject.VBComponents.Add(1)
+            vb_module.CodeModule.AddFromString(vba_code)
+        except Exception as e:
+            logger.error("❌ Gagal mengeksekusi script. Pastikan 'Trust access to the VBA project object model' sudah dicentang di Trust Center Excel!")
+            raise Exception(f"VBA Injection failed: {e}")
+            
+        try:
+            macro = self.wb.macro(entry_method)
+            result = macro(*args)
+            #logger.info("   ↳ Script eksternal selesai dieksekusi ✅")
+            return result
+        except Exception as e:
+            logger.error(f"   ↳ ❌ Gagal mengeksekusi method '{entry_method}': {e}")
+            raise
+        finally:
+            try:
+                self.wb.api.VBProject.VBComponents.Remove(vb_module)
+                #logger.info("   ↳ Jejak script telah dibersihkan.")
+            except:
+                pass

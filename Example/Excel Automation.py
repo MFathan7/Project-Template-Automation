@@ -1,6 +1,4 @@
-import logging
-import pandas as pd
-import sys
+import logging, sys
 import os
 
 # Setup agar file di dalam folder Example bisa membaca folder library di luarnya
@@ -12,79 +10,65 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def main():
-    logger.info("=== Memulai Contoh Excel Automation ===")
+    logger.info("=== Memulai Contoh Invoke VBA (Macro) ===")
     
-    file_excel = "Data_Test.xlsx"
+    # Konfigurasi Path
+    base_dir = os.path.dirname(__file__) # Path folder 'Example'
+    file_macro = os.path.abspath(os.path.join(base_dir, "Data", "MacroTest.xlsm"))
+    file_vbs = os.path.abspath(os.path.join(base_dir, "Data", "export_pdf.vbs"))
+    file_pdf_hasil = os.path.abspath(os.path.join(base_dir, "Data", "Hasil_Laporan.pdf"))
+
     
-    # Siapkan data dummy menggunakan Pandas (pengganti Build DataTable)
-    data_karyawan = pd.DataFrame({
-        "ID": ["K001", "K002", "K003"],
-        "Nama": ["Budi", "Siti", "Andi"],
-        "Status": ["Aktif", "Cuti", "Aktif"]
-    })
-    
+    if not os.path.exists(file_macro):
+        logger.error(f"❌ File {file_macro} tidak ditemukan! Buat dulu filenya sesuai instruksi sebelumnya.")
+        return
+
     # ==========================================
     # 🟢 ACTIVITY: Excel Application Scope
     # ==========================================
     with excel_utils.ExcelApplicationScope(
-        file_path=file_excel, 
-        visible=True,           # Set True untuk melihat Excel terbuka, False untuk background
-        create_new_file=True,   # Otomatis buat file jika belum ada
-        save_changes=True       # Otomatis save saat selesai
+        file_path=file_macro, 
+        visible=True,           # Set True agar kelihatan prosesnya
+        create_new_file=False,  
+        save_changes=True       
     ) as excel_scope:
         
         # --------------------------------------
-        # ✍️ ACTIVITY: Write Range
+        # ⚙️ 1. Panggil Function VBA (Return Value)
         # --------------------------------------
-        logger.info("Menulis data ke sheet 'HR_Data'...")
-        excel_scope.write_range(
-            sheet_name="HR_Data",
-            data=data_karyawan,
-            start_cell="A1",
-            add_headers=True
-        )
+        logger.info("\n--- Test 1: Function VBA dengan Return Value ---")
+        hasil_kalkulasi = excel_scope.invoke_vba("KalkulasiBonus", "Budi Santoso", 5000000, 15)
+        logger.info(f"Menerima balasan dari Macro: {hasil_kalkulasi}")
         
         # --------------------------------------
-        # 📥 ACTIVITY: Read Range (Full / Auto Expand)
+        # ⚙️ 2. Panggil Sub VBA (Action ke Cell)
         # --------------------------------------
-        logger.info("Membaca kembali data dari sheet 'HR_Data' mulai dari A1...")
-        df_hasil = excel_scope.read_range(
-            sheet_name="HR_Data",
-            range_address="A1",
-            has_headers=True
-        )
+        logger.info("\n--- Test 2: Sub VBA menulis ke Excel ---")
+        teks_input = f"Laporan Otomatis: {hasil_kalkulasi}"
+        excel_scope.invoke_vba("TulisLaporan", "Sheet1", teks_input)
         
-        # Tampilkan hasil bacaan di terminal
-        logger.info("\nData (Auto Expand A1):")
-        print(df_hasil.to_string(index=False))
+        # --------------------------------------
+        # 🔍 3. Validasi (Read Cell)
+        # --------------------------------------
+        logger.info("\n--- Test 3: Membaca hasil tulisan Macro ---")
+        nilai_cell = excel_scope.read_cell("Sheet1", "A1")
+        logger.info(f"Isi Cell A1 sekarang adalah: '{nilai_cell}'")
 
         # --------------------------------------
-        # 📥 ACTIVITY: Read Range (Spesifik Kotak)
+        # 💉 4. Test Inject Script VBS (Ekspor PDF)
         # --------------------------------------
-        logger.info("Membaca spesifik range 'A1:B2'...")
-        df_spesifik = excel_scope.read_range(
-            sheet_name="HR_Data",
-            range_address="A1:B2", # Hanya baca sampai baris 2, kolom B
-            has_headers=True
-        )
-        logger.info("\nData (Spesifik A1:B2):")
-        print(df_spesifik.to_string(index=False))
-
-        #ACTIVITY: Get sheet list
-        list_sheet = excel_scope.get_sheets()
-        print(list_sheet)
-
-        # Tulis value per cell
-        excel_scope.write_cell("Report", "A1", "DONE")
-
-        # Baca value per cell
-        status = excel_scope.read_cell("Report", "A1")
-
-        # Menjalankan macro bernama "FormatLaporan" tanpa parameter
-        excel_scope.invoke_vba("FormatLaporan")
-
-        # Menjalankan macro bernama "KalkulasiBonus" dengan parameter (Bulan, Tahun)
-        excel_scope.invoke_vba("KalkulasiBonus", "November", 2024)
+        logger.info("\n--- Test 4: Invoke VBA From File (Ekspor PDF) ---")
+        
+        
+        try:
+            excel_scope.invoke_vba_from_file(
+                file_vbs,           # Parameter 1: vba_file_path
+                "ExportToPDF",      # Parameter 2: entry_method
+                file_pdf_hasil      # Parameter 3 dan seterusnya akan otomatis masuk ke *args (argumen VBA)
+            )
+            logger.info(f"✅ Sukses! File PDF berhasil di-generate di: {file_pdf_hasil}")
+        except Exception as e:
+            logger.error(f"Gagal melakukan Ekspor PDF. Sudah centang 'Trust access to VBA' di Excel? Error: {e}")
 
 if __name__ == "__main__":
     main()

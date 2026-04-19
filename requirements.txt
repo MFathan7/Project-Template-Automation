@@ -3,3 +3,5 @@ openpyxl
 playwright
 xlwings
 lxml
+SQLAlchemy
+pyodbc
