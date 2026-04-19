@@ -38,7 +38,7 @@ class UseApplicationBrowserAsync:
                 await self._playwright_context_manager.__aexit__(exc_type, exc_val, exc_tb)
 
 # ==========================================
-# 🧩 UI AUTOMATION ACTIVITIES
+# UI AUTOMATION ACTIVITIES
 # ==========================================
 
 async def type_into(page: Page, selector: str, text: str, log_name: str = ""):
