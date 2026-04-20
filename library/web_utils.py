@@ -9,7 +9,11 @@ logger = logging.getLogger(__name__)
 # ==========================================
 
 class UseApplicationBrowserAsync:
-    def __init__(self, url: str, headless: bool = False, close_on_exit: bool = True, timeout_ms: int = 30000):
+    """
+    Context manager untuk Browser. Bisa pakai 'async with' (auto-close) 
+    atau panggil open() dan close() manual untuk oper variabel antar sequence.
+    """
+    def __init__(self, url: str = "", headless: bool = False, close_on_exit: bool = True, timeout_ms: int = 30000):
         self.url = url
         self.headless = headless
         self.close_on_exit = close_on_exit
@@ -19,23 +23,42 @@ class UseApplicationBrowserAsync:
         self.page: Page = None
         self._playwright_context_manager = None
 
-    async def __aenter__(self) -> Page:
-        #logger.info(f"🌐 USE APPLICATION BROWSER: Membuka {self.url} (Headless: {self.headless})")
+    async def open(self) -> Page:
+        """Membuka browser secara eksplisit untuk dioper variabelnya."""
+        if self.page:
+            logger.warning("Browser sudah terbuka.")
+            return self.page
+            
+        #logger.info(f"🌐 USE APPLICATION: Membuka browser (Headless: {self.headless})")
         self._playwright_context_manager = async_playwright()
         self.playwright = await self._playwright_context_manager.__aenter__()
         self.browser = await self.playwright.chromium.launch(headless=self.headless)
         self.page = await self.browser.new_page()
         self.page.set_default_timeout(self.timeout_ms)
-        await self.page.goto(self.url)
+        
+        if self.url:
+            #logger.info(f"   ↳ Navigasi ke: {self.url}")
+            await self.page.goto(self.url)
+            
         return self.page
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def close(self):
+        """Menutup browser secara eksplisit."""
         if self.close_on_exit:
-            #logger.info("🛑 CLOSE APPLICATION BROWSER: Menutup Browser.")
+            #logger.info("🛑 CLOSE APPLICATION: Menutup Browser.")
             if self.browser:
                 await self.browser.close()
+                self.browser = None
             if self._playwright_context_manager:
-                await self._playwright_context_manager.__aexit__(exc_type, exc_val, exc_tb)
+                await self._playwright_context_manager.__aexit__(None, None, None)
+                self._playwright_context_manager = None
+            self.page = None
+
+    async def __aenter__(self) -> Page:
+        return await self.open()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
 # ==========================================
 # UI AUTOMATION ACTIVITIES
@@ -216,3 +239,32 @@ async def extract_table(page: Page, selector: str, next_button_selector: str = N
         return final_df
         
     return pd.DataFrame()
+
+async def inject_js_script(page: Page, script_code: str, arg: any = None, log_name: str = "") -> any:
+    """Menjalankan string kode JS langsung."""
+    #name = log_name if log_name else "Inline Script"
+    #logger.info(f"⚙️ INJECT JS: Menjalankan script '{name}'")
+    try:
+        result = await page.evaluate(script_code, arg)
+        return result
+    except Exception as e:
+        logger.error(f"   ↳ ❌ Gagal eksekusi JS: {e}")
+        raise
+
+async def inject_js_file(page: Page, file_path: str, arg: any = None, log_name: str = "") -> any:
+    """Membaca file .js eksternal dan mengeksekusinya di dalam halaman web."""
+    # name = log_name if log_name else os.path.basename(file_path)
+    # logger.info(f"⚙️ INJECT JS FILE: Mengeksekusi file '{name}'")
+    
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File JavaScript tidak ditemukan: {file_path}")
+        
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            js_code = f.read()
+            
+        result = await page.evaluate(js_code, arg)
+        return result
+    except Exception as e:
+        logger.error(f"   ↳ ❌ Gagal eksekusi JS File: {e}")
+        raise
