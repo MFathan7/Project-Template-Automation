@@ -7,3 +7,4 @@ SQLAlchemy
 zipfile
 pyodbc
 requests
+O365
