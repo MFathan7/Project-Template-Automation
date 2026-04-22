@@ -1,6 +1,6 @@
 import logging
 import logging.handlers # Penting untuk MemoryHandler
-import os
+import os, argparse
 from datetime import datetime
 from framework.models import State, BotContext, BusinessRuleException
 from framework import InitAllSettings, GetTransactionData, CloseAllApplications, Process
@@ -70,10 +70,12 @@ def setup_file_logger(config: dict):
 
 
 PROJECT_NAME = "Robotic Enterprise Framework"
-def run_reframework():
+def run_reframework(in_arguments: dict = None):
     logger.info(f"{PROJECT_NAME} execution started.")
     
     context = BotContext()
+    if in_arguments:
+        context.config.update(in_arguments)
 
     while context.state != State.END_PROCESS:
         try:
@@ -143,4 +145,14 @@ def run_reframework():
     CloseAllApplications.execute(context)
 
 if __name__ == "__main__":
-    run_reframework()
+    parser = argparse.ArgumentParser()
+    
+    # Tambahkan argument yang kamu inginkan di sini
+    parser.add_argument("--env", type=str, default="DEV", help="Environment (DEV/UAT/PROD)")
+    parser.add_argument("--input_file", type=str, default="", help="Path spesifik file input")
+    parser.add_argument("--headless", action="store_true", help="Jalankan browser di background jika ditambah flag ini")
+    #Contoh execute : python main.py --env PROD --input_file "Data/data_penting.xlsx"
+    
+    args = parser.parse_args()
+    
+    run_reframework(in_arguments=vars(args))

@@ -10,7 +10,7 @@ def execute(context):
     # --------------------------------------
     logger.info("Initializing settings...")
     
-    if not context.config:
+    if not context.is_config_loaded:
         context.config = {}
         in_config_file = "Data/Config.xlsx"
         in_config_sheets = ["Settings", "Constants"]
@@ -33,11 +33,12 @@ def execute(context):
                     if not dt_config.empty:
                         for index, row in dt_config.iterrows():
                             name = str(row.get("Name", "")).strip()
-                            if name and pd.notna(row.get("Name")):
+                            if name and pd.notna(row.get("Name")) and not name.startswith("#"):
                                 value = row.get("Value")
                                 final_value = "" if pd.isna(value) else value
-                                context.config[name] = final_value
-                                
+                                if name not in context.config:
+                                    context.config[name] = final_value
+            context.is_config_loaded = True
         except FileNotFoundError:
             logger.error(f"File Config tidak ditemukan di: {in_config_file}")
             raise 

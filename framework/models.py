@@ -29,6 +29,7 @@ class BotContext:
         self.config = {}
         self.transaction_number = 1
         self.transaction_item = None
+        self.is_config_loaded = False
         self.retry_number = 0
         self.max_retry_number = 2
         self.transaction_data = [] # List dummy untuk antrean data
