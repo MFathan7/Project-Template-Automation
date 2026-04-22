@@ -8,3 +8,4 @@ zipfile
 pyodbc
 requests
 O365
+paramiko

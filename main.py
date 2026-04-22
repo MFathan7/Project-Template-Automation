@@ -1,4 +1,5 @@
-import logging
+import logging, os
+from datetime import datetime
 from framework.models import State, BotContext, BusinessRuleException
 from framework import InitAllSettings, GetTransactionData, CloseAllApplications, Process
 
@@ -26,6 +27,16 @@ if root_logger.hasHandlers():
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(EmojiFormatter())
 root_logger.addHandler(console_handler)
+
+os.makedirs("Data/Logs", exist_ok=True)
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+log_filename = f"Data/Logs/robot_execution_{timestamp}.txt"
+
+file_handler = logging.FileHandler(log_filename, encoding="utf-8")
+# Format untuk txt dibuat lebih bersih tanpa emoji agar mudah dibaca oleh sistem analitik
+file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - [%(module)s] - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+file_handler.setFormatter(file_formatter)
+root_logger.addHandler(file_handler)
 
 logger = logging.getLogger("Main")
 
