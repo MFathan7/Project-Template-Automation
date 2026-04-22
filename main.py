@@ -1,4 +1,6 @@
-import logging, os
+import logging
+import logging.handlers # Penting untuk MemoryHandler
+import os
 from datetime import datetime
 from framework.models import State, BotContext, BusinessRuleException
 from framework import InitAllSettings, GetTransactionData, CloseAllApplications, Process
@@ -18,6 +20,9 @@ class EmojiFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
         return formatter.format(record)
 
+# ==========================================
+# SETUP GLOBAL LOGGING HANDLERS
+# ==========================================
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
@@ -28,23 +33,46 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(EmojiFormatter())
 root_logger.addHandler(console_handler)
 
-os.makedirs("Data/Logs", exist_ok=True)
-timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-log_filename = f"Data/Logs/robot_execution_{timestamp}.txt"
-
-file_handler = logging.FileHandler(log_filename, encoding="utf-8")
-# Format untuk txt dibuat lebih bersih tanpa emoji agar mudah dibaca oleh sistem analitik
+memory_handler = logging.handlers.MemoryHandler(capacity=1000, target=None)
 file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - [%(module)s] - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-file_handler.setFormatter(file_formatter)
-root_logger.addHandler(file_handler)
+memory_handler.setFormatter(file_formatter)
+root_logger.addHandler(memory_handler)
 
 logger = logging.getLogger("Main")
+
+def setup_file_logger(config: dict):
+    """
+    Setup File Log ke file txt.
+    Tambah key "Folder Log" di Config file untuk merubah path location folder untuk data Log robot.
+    """
+    global memory_handler
+    
+    has_file_handler = any(isinstance(h, logging.FileHandler) for h in root_logger.handlers)
+    if has_file_handler:
+        return
+
+    log_folder = config.get("Folder Log", "Data/Logs/")
+    os.makedirs(log_folder, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    log_filename = os.path.join(log_folder, f"robot_execution_{timestamp}.txt")
+
+    file_handler = logging.FileHandler(log_filename, encoding="utf-8")
+    file_handler.setFormatter(file_formatter)
+    
+    root_logger.addHandler(file_handler)
+
+    if memory_handler in root_logger.handlers:
+        memory_handler.setTarget(file_handler)
+        memory_handler.flush()
+        memory_handler.close()
+        root_logger.removeHandler(memory_handler)
+
 
 PROJECT_NAME = "Robotic Enterprise Framework"
 def run_reframework():
     logger.info(f"{PROJECT_NAME} execution started.")
     
-    # Inisialisasi Context (Variabel global)
     context = BotContext()
 
     while context.state != State.END_PROCESS:
@@ -54,6 +82,9 @@ def run_reframework():
             # ==============================
             if context.state == State.INIT:
                 InitAllSettings.execute(context)
+                
+                setup_file_logger(context.config)
+                
                 context.state = State.GET_TRANSACTION
 
             # ==============================
