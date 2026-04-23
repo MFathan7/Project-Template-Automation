@@ -53,28 +53,38 @@ class ExcelApplicationScope:
     # ==========================================
     # ACTIVITIES: Read Range & Write Range
     # ==========================================
-    def read_range(self, sheet_name: str, range_address: str = "A1", has_headers: bool = True) -> pd.DataFrame:
-        
-        if sheet_name in [sheet.name for sheet in self.wb.sheets]:
+    def read_range(self, sheet_name: str, range_address: str = "", has_headers: bool = True) -> pd.DataFrame:
+        try:
             sheet = self.wb.sheets[sheet_name]
-        else:
-            raise ValueError(f"Sheet '{sheet_name}' tidak ditemukan!")
-
-        if range_address == "":
-            # Baca seluruh Used Range (mengabaikan putusnya tabel akibat baris kosong)
-            df = sheet.used_range.options(pd.DataFrame, index=False, header=has_headers).value
-        elif ":" in range_address:
-            # Baca spesifik range
-            df = sheet.range(range_address).options(pd.DataFrame, index=False, header=has_headers).value
-        else:
-            # Baca dengan expand (berhenti jika ada baris/kolom kosong total)
-            df = sheet.range(range_address).options(pd.DataFrame, index=False, header=has_headers, expand='table').value
-        
-        # Jika file kosong, return dataframe kosong
-        if df is None or df.empty:
-            return pd.DataFrame()
             
-        return df
+            if not range_address:
+                rng = sheet.used_range
+            else:
+                rng = sheet.range(range_address)
+                if ":" not in range_address:
+                    rng = rng.expand('table')
+                    
+            if rng.rows.count == 1 and rng.columns.count == 1 and rng.value is None:
+                return pd.DataFrame()
+                
+            if rng.rows.count == 1 and has_headers:
+                headers = rng.value
+                if not isinstance(headers, list):
+                    headers = [headers]
+                return pd.DataFrame(columns=headers)
+                
+            df = rng.options(pd.DataFrame, header=has_headers, index=False).value
+            
+            if df is None:
+                return pd.DataFrame()
+            if not isinstance(df, pd.DataFrame):
+                df = pd.DataFrame(df)
+                
+            return df
+
+        except Exception as e:
+            logger.error(f"❌ Gagal membaca range di sheet '{sheet_name}': {e}")
+            raise
 
     def write_range(self, sheet_name: str, data: pd.DataFrame, start_cell: str = "A1", add_headers: bool = True):
         #logger.info(f"Menulis data ke sheet '{sheet_name}' mulai dari cell '{start_cell}'")
