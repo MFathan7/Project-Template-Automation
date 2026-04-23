@@ -46,7 +46,7 @@ class DatabaseScope:
             logger.warning("Koneksi sudah terbuka.")
             return self
             
-        logger.info(f"🛢️ CONNECT DATABASE: Membuka koneksi ke {self.db_type.upper()}...")
+        #logger.info(f"🛢️ CONNECT DATABASE: Membuka koneksi ke {self.db_type.upper()}...")
         try:
             # Tambahkan kwargs khusus untuk performa Bulk Insert di SQL Server
             engine_kwargs = {}
@@ -55,7 +55,7 @@ class DatabaseScope:
                 
             self.engine = create_engine(self.connection_string, **engine_kwargs)
             self.connection = self.engine.connect()
-            logger.info("   ↳ Koneksi berhasil ✅")
+            #logger.info("   ↳ Koneksi berhasil ✅")
             return self
         except Exception as e:
             logger.error(f"   ↳ ❌ Gagal connect database: {e}")
@@ -63,7 +63,7 @@ class DatabaseScope:
 
     def disconnect(self):
         """Menutup koneksi database."""
-        logger.info("🛑 DISCONNECT DATABASE: Menutup koneksi database.")
+        #logger.info("🛑 DISCONNECT DATABASE: Menutup koneksi database.")
         if self.connection:
             self.connection.close()
             self.connection = None

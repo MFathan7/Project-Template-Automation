@@ -11,7 +11,6 @@ def execute(context):
     logger.info("Initializing settings...")
     
     if not context.is_config_loaded:
-        context.config = {}
         in_config_file = "Data/Config.xlsx"
         in_config_sheets = ["Settings", "Constants"]
         

@@ -4,7 +4,6 @@ playwright
 xlwings
 lxml
 SQLAlchemy
-zipfile
 pyodbc
 requests
 O365
