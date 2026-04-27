@@ -40,7 +40,10 @@ def move_file(source_path: str, destination_path: str, overwrite: bool = True):
     #logger.info(f"🚚 MOVE FILE: Memindahkan '{source_path}' ke '{destination_path}'")
     
     if overwrite and os.path.exists(destination_path):
-        os.remove(destination_path) # Hapus dest sebelumnya jika overwrite = True
+        try:
+            os.remove(destination_path)
+        except Exception as e:
+            pass
         
     shutil.move(source_path, destination_path)
 
@@ -48,8 +51,11 @@ def copy_file(source_path: str, destination_path: str, overwrite: bool = True):
     #logger.info(f"📄 COPY FILE: Menyalin '{source_path}' ke '{destination_path}'")
     
     if overwrite and os.path.exists(destination_path):
-        os.remove(destination_path)
-        
+        try:
+            os.remove(destination_path)
+        except Exception as e:
+            pass
+    
     shutil.copy2(source_path, destination_path)
 
 def copy_folder(source_path: str, destination_path: str, overwrite: bool = True):
