@@ -117,8 +117,9 @@ class DatabaseScope:
             raise ConnectionError("Koneksi belum dibuka! Panggil .connect() terlebih dahulu.")
             
         try:
-            # Untuk SQL Server dengan driver modern dan fast_executemany, bulk insert akan sangat cepat
-            data.to_sql(name=table_name, con=self.connection, if_exists=behavior, index=False)
+            data_clean = data.where(pd.notnull(data), None)
+            con_to_use = self.connection if self.connection else self.engine
+            data_clean.to_sql(name=table_name, con=con_to_use, if_exists=behavior, index=False)
             #logger.info("   ↳ Bulk insert selesai ✅")
         except Exception as e:
             logger.error(f"   ↳ ❌ Gagal bulk insert: {e}")

@@ -105,7 +105,7 @@ class ExcelApplicationScope:
             raise ValueError(f"Sheet '{sheet_name}' tidak ditemukan!")
             
         value = self.wb.sheets[sheet_name].range(cell_address).value
-        logger.info(f"   ↳ Hasil: {value}")
+        #logger.info(f"   ↳ Hasil: {value}")
         return value
 
     def write_cell(self, sheet_name: str, cell_address: str, value: any):
