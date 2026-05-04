@@ -137,29 +137,31 @@ class DatabaseScope:
             logger.warning("   ↳ DataTable kosong. Eksekusi dilewati.")
             return 0
             
-        update_cols = [col for col in data.columns if col not in match_columns]
+        df_clean = data.replace([np.inf, -np.inf], np.nan)
+        df_clean = df_clean.astype(object).where(pd.notnull(df_clean), None)
+
+        update_cols = [c for c in df_clean.columns if c not in match_columns]
         
         if not update_cols:
             raise ValueError("Dataframe tidak memiliki kolom sisa untuk di-update selain dari match_columns.")
         
-        q_start, q_end = ('[', ']') if self.db_type == 'sqlserver' else (('`', '`') if self.db_type == 'mysql' else ('"', '"'))
-        def safe_param(name):
-            return re.sub(r'[^a-zA-Z0-9_]', '_', str(name))
-
-        set_clause = ", ".join([f"{q_start}{col}{q_end} = :{safe_param(col)}" for col in update_cols])
-        where_clause = " AND ".join([f"{q_start}{col}{q_end} = :{safe_param(col)}" for col in match_columns])
-        query = f"UPDATE {q_start}{table_name}{q_end} SET {set_clause} WHERE {where_clause}"
+        set_clause = ", ".join([f"[{c}] = :{c}" for c in update_cols])
+        where_clause = " AND ".join([f"[{c}] = :{c}" for c in match_columns])
+        sql_query = f"UPDATE [{table_name}] SET {set_clause} WHERE {where_clause}"
         
         try:
-            records = data.to_dict('records')
-            safe_records = []
-            for row in records:
-                safe_records.append({safe_param(k): v for k, v in row.items()})
+            params = df_clean.to_dict('records')
+            con_to_use = self.connection if self.connection else self.engine
             
-            #logger.info("   ↳ Bulk update selesai ✅")
-            result = self.connection.execute(text(query), safe_records)
-            self.connection.commit()
-            return result.rowcount if result.rowcount > 0 else len(data)
+            if self.connection:
+                result = self.connection.execute(text(sql_query), params)
+                self.connection.commit()
+                rowcount = result.rowcount
+            else:
+                with self.engine.begin() as conn:
+                    result = conn.execute(text(sql_query), params)
+                    rowcount = result.rowcount
+            return rowcount
         except Exception as e:
             self.connection.rollback()
             logger.error(f"   ↳ ❌ Gagal bulk update: {e}")
